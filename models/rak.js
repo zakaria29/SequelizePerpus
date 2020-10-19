@@ -14,11 +14,18 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   rak.init({
+    id_rak: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      allowNull: true,
+      autoIncrement: true
+    },
     nama_rak: DataTypes.STRING,
     lokasi_rak: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'rak',
+    tableName: "rak"
   });
   return rak;
 };
