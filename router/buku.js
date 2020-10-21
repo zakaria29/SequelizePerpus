@@ -1,6 +1,27 @@
 const express = require("express")
 const app = express()
 
+// library untuk upload file
+// ---------------------------------
+const multer = require("multer")
+// multer digunakan untuk membaca data request dari form-data
+const path = require("path")
+// path untuk manage alamat direktori file
+const fs = require("fs")
+// fs untuk manage file
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "./cover")
+    },
+    filename: (req, file, cb) => {
+        cb(null, "cover-" + Date.now() + path.extname(file.originalname))
+    }
+})
+
+const upload = multer({storage: storage})
+// ---------------------------------
+
 // call model for buku
 const buku = require("../models/index").buku
 
@@ -21,7 +42,7 @@ app.get("/", async(req, res) => {
     })
 })
 
-app.post("/", async(req, res) => {
+app.post("/", upload.single("cover") ,async(req, res) => {
     // tampung data request yang akan di masukkan
     let data = {
         id_rak: req.body.id_rak,
@@ -30,6 +51,7 @@ app.post("/", async(req, res) => {
         penulis_buku: req.body.penulis_buku,
         penerbit_buku: req.body.penerbit_buku,
         tahun_penerbit: req.body.tahun_penerbit,
+        cover: req.file.filename
     }
 
     // execute insert data
@@ -47,7 +69,7 @@ app.post("/", async(req, res) => {
     })
 })
 
-app.put("/", async(req, res) => {
+app.put("/", upload.single("cover"), async(req, res) => {
     // tampung data request yang akan di ubah
     let data = {
         id_rak: req.body.id_rak,
@@ -60,6 +82,19 @@ app.put("/", async(req, res) => {
     // key yg menunjukkan data yg akan diubah
     let parameter = {
         id_buku: req.body.id_buku
+    }
+
+    if (req.file) {
+        let oldBuku = await buku.findOne({where: parameter})
+        let oldCover = oldBuku.cover
+
+        // delete old file
+        let pathFile = path.join(__dirname,"../cover",oldCover)
+        // __dirname = path direktori pada file saat ini
+        fs.unlink(pathFile, error => console.log(error))
+        // unlink = hapus file
+
+        data.cover = req.file.filename
     }
 
 
@@ -85,6 +120,13 @@ app.delete("/:id_buku", async(req, res) => {
       let parameter = {
           id_buku: id_buku
       }
+
+      // ambil data yg akan dihapus
+      let oldBuku = await buku.findOne({where: parameter})
+      let oldCover = oldBuku.cover
+
+      let pathFile = path.join(__dirname, "../cover",oldCover)
+      fs.unlink(pathFile, err => console.log(err))
 
       // execute delete data
     buku.destroy({where : parameter})
