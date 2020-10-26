@@ -28,8 +28,31 @@ const buku = require("../models/index").buku
 // middleware for allow the request from body
 app.use(express.urlencoded({extended:true}))
 
+// authorization
+const verifyToken = require("./verifyToken")
+app.use(verifyToken)
+
 app.get("/", async(req, res) => {
     buku.findAll({
+        include: ["rak"]
+    })
+    .then(result => {
+        res.json(result)
+    })
+    .catch(error => {
+        res.json({
+            message: error.message
+        })
+    })
+})
+
+app.get("/:id_buku", async(req, res) => {
+    
+    let params = {
+        id_buku: req.params.id_buku
+    }
+    buku.findOne({
+        where: params,
         include: ["rak"]
     })
     .then(result => {
